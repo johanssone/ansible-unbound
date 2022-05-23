@@ -1,0 +1,39 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: Check unbound configuration
+      command: unbound-checkconf
+      changed_when: false
+    - name: Check unbound is running
+      command: pgrep -a unbound
+      register: unbound_proc
+      changed_when: false
+    - name: Install host lookup package (apt)
+      package:
+        name: host
+      when: ansible_pkg_mgr == 'apt'
+    - name: Install host lookup package (yum/zypper)
+      package:
+        name: bind-utils
+      when: ansible_pkg_mgr in ['yum', 'zypper']
+    - name: Test unbound resolution
+      command: host google.com 127.0.0.1
+      register: unbound_lookup
+      retries: 10
+      delay: 5
+      changed_when: false
+    - name: Test unbound resolution
+      command: host {{ item.host }} 127.0.0.1
+      register: unbound_localzone_lookup
+      retries: 3
+      delay: 5
+      failed_when: "item.host ~ ' has address ' ~ item.expected_address not in unbound_localzone_lookup.stdout"
+      changed_when: false
+      with_items:
+        - host: "testvalid.{{ unbound_regional_zone }}"
+          expected_address: "{{ hostvars['testvalid']['ansible_host'] }}"
+  vars:
+    unbound_regional_zone: nova.openstack
+    unbound_listen_interface: 127.0.0.1
+    unbound_ipv6: false
