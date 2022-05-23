@@ -2,14 +2,14 @@
 dependency:
   name: galaxy
 driver:
-  name: docker
+  name: podman
 lint: |
   set -e
   ansible-lint
 platforms:
   - name: instance
     image: "${docker_image:-quay.io/loganv/docker-ci}:${docker_image_tag:-ubuntu-focal}"
-    user: root
+      #user: root
     command: ${docker_command:-/lib/systemd/systemd}
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
